@@ -20,21 +20,27 @@ def select_controller():
         return None
 
 
-class SnesController:
+class SnesController(Node):
 
     def __init__(self, node_name, controller, update_period):
         super().__init__(node_name)
         self.controller = controller
         self.timer = self.create_timer(update_period, self.update)
 
-    def update():
-        pass
+    def update(self):
+        axes = [self.controller.get_axis(a) for a in range(self.controller.get_numaxes())]
+        buttons = [self.controller.get_button(b) for b in range(self.controller.get_numbuttons())]
+        self.get_logger().info(f'JOY ---> axes-{axes} buttons-{buttons}')
 
 
 def main(args=None):
     controller = select_controller()
     if controller is None:
         return
+    rclpy.init(args=args)
+    snes = SnesController('snes', controller, 0.5)
+    rclpy.spin(snes)
+    snes.destroy_node()
 
 
 if __name__ == '__main__':
