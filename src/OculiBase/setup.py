@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'snes_test = OculiBase.snes_test:main'
+            'snes_test = OculiBase.snes_test:main',
+            'base_monitor = OculiBase.base_monitor:main'
         ],
     },
 )

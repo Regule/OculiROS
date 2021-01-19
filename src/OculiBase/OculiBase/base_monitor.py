@@ -1,0 +1,56 @@
+import rclpy
+import serial
+import pygame as pg
+from rclpy.node import Node
+from serial.tools import list_ports 
+from time import sleep
+
+
+class BaseMonitor(Node):
+
+    def __init__(self, node_name, moto_board, update_period):
+        super().__init__(node_name)
+        self.moto_board = moto_board
+        self.timer = self.create_timer(update_period, self.update)
+
+    def update(self):
+        self.moto_board.write(bytes('<', 'ASCII'))
+        sleep(1) # TODO: Check how to do this in more ROS2 way
+        response = self.moto_board.readline().decode('ASCII')
+        self.get_logger().info(f'{response}')
+        
+
+def interactive_port_selection():
+    ports = list(map(str,list_ports.comports()))
+    if len(ports) == 0:
+        print('No serial ports avaialble.')
+        return None
+    print('Ports available :')
+    for choice, port in enumerate(ports):
+        print(f'{choice} -> {port}')
+    choice = int(input('Select port >'))
+    try:
+        return ports[choice].split()[0]
+    except IndexError:
+        print(f'No port at number {choice}')
+        return None
+
+
+def main(args=None):
+    moto_board = None
+    if args is None or args.port is None:
+        moto_board = interactive_port_selection()
+    else:
+        moto_board = args.port
+    if moto_board is None:
+        return
+    # FIXME: port, baudrate and timeout should be either in args or read in interactive mode
+    baudrate = 9600
+    timeout = 1
+    moto_board = serial.Serial(moto_board, baudrate=baudrate, timeout=timeout)
+    
+    rclpy.init(args=args)
+    base_monitor = BaseMonitor('base_monitor', moto_board, 0.5)
+    rclpy.spin(base_monitor)
+    base_monitor.destroy_node()
+
