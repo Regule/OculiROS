@@ -1,7 +1,8 @@
 import rclpy
+import serial
 import pygame as pg
 from rclpy.node import Node
-
+from serial.tools import list_ports 
 
 def select_controller():
     pg.joystick.init()
@@ -20,11 +21,32 @@ def select_controller():
         return None
 
 
+def select_board():
+    ports = list(map(str,list_ports.comports()))
+    if len(ports) == 0:
+        print('No serial ports avaialble.')
+        return None
+    print('Ports available :')
+    for choice, port in enumerate(ports):
+        print(f'{choice} -> {port}')
+    choice = int(input('Select port >'))
+    try:
+        port = ports[choice].split()[0]
+        baudrate = 9600
+        timeout = 0.3
+        board = serial.Serial(port, baudrate=baudrate, timeout=timeout)
+        return board
+    except IndexError:
+        print(f'No port at number {choice}')
+        return None
+
+
 class SnesController(Node):
 
-    def __init__(self, node_name, controller, update_period):
+    def __init__(self, node_name, controller, board, update_period):
         super().__init__(node_name)
         self.controller = controller
+        self.board = board
         self.timer = self.create_timer(update_period, self.update)
 
     def update(self):
@@ -38,16 +60,25 @@ class SnesController(Node):
             axes = [self.controller.get_axis(a) for a in range(self.controller.get_numaxes())]
             buttons = [self.controller.get_button(b) for b in range(self.controller.get_numbuttons())]
             self.get_logger().info(f'JOY ---> axes-{axes} buttons-{buttons}')
+            pwm_left = abs(int(255*axes[0]))
+            pwm_right = abs(int(255*axes[1]))
+            dir_left = 0 if axes[0]>=0 else 1
+            dir_right= 0 if axes[1]>=0 else 1
+            self.board.write(bytes(f'>{dir_left}#{pwm_left}#{dir_right}#{pwm_right}','ASCII'))
+            self.board.write(bytes('<','ASCII'))
+            response = self.board.readline().decode('ASCII')
+            self.get_logger().info(f'BOARD ---> {response}')
         else:
             print('Controller not initialized.')
 
 def main(args=None):
     pg.init()
     controller = select_controller()
-    if controller is None:
+    board = select_board()
+    if controller is None or board is None:
         return
     rclpy.init(args=args)
-    snes = SnesController('snes', controller, 0.5)
+    snes = SnesController('snes', controller, board, 0.5)
     rclpy.spin(snes)
     snes.destroy_node()
 
