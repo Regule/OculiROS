@@ -28,12 +28,21 @@ class SnesController(Node):
         self.timer = self.create_timer(update_period, self.update)
 
     def update(self):
-        axes = [self.controller.get_axis(a) for a in range(self.controller.get_numaxes())]
-        buttons = [self.controller.get_button(b) for b in range(self.controller.get_numbuttons())]
-        self.get_logger().info(f'JOY ---> axes-{axes} buttons-{buttons}')
+        for event in pg.event.get():
+            if event.type == pg.JOYBUTTONDOWN:
+                self.get_logger().info("Joystick button pressed.")
+            if event.type == pg.JOYBUTTONUP:
+                self.get_logger().info("Joystick button released.")
 
+        if self.controller.get_init():
+            axes = [self.controller.get_axis(a) for a in range(self.controller.get_numaxes())]
+            buttons = [self.controller.get_button(b) for b in range(self.controller.get_numbuttons())]
+            self.get_logger().info(f'JOY ---> axes-{axes} buttons-{buttons}')
+        else:
+            print('Controller not initialized.')
 
 def main(args=None):
+    pg.init()
     controller = select_controller()
     if controller is None:
         return
