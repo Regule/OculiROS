@@ -28,6 +28,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/EncoderReadout.msg"
+  "msg/Pwm.msg"
  )
 
 add_executable(simple_cpp_node src/simple_cpp_node.cpp)
