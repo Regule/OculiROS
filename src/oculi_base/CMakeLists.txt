@@ -21,9 +21,14 @@ find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
 # Install Python modules
 ament_python_install_package(${PROJECT_NAME})
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/EncoderReadout.msg"
+ )
 
 add_executable(simple_cpp_node src/simple_cpp_node.cpp)
 ament_target_dependencies(simple_cpp_node rclcpp std_msgs)
