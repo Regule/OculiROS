@@ -69,6 +69,8 @@ class SnesController(Node):
             self.board.write(bytes(f'>{dir_left}#{pwm_left}#{dir_right}#{pwm_right}','ASCII'))
             self.board.write(bytes('<','ASCII'))
             response = self.board.readline().decode('ASCII')
+            if len(response) == 0:
+                response = 'NO RESPONSE RECIEVED'
             self.get_logger().info(f'BOARD ---> {response}')
         else:
             print('Controller not initialized.')
